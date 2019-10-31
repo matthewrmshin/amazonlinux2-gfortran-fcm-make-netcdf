@@ -1,0 +1,22 @@
+name: Docker Image CI
+
+on: [push]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    env:
+      TAG: "${{github.repository}}:${{github.sha}}"
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Build the Docker image
+      run: docker build . --file Dockerfile --tag "${TAG}"
+    - name: Basic test for the Docker image
+      run: |
+        docker run --rm -v "${PWD}/test:/opt/test" "${TAG}" \
+        bash -c "fcm make -C '/opt/test' && '/opt/test/build/bin/hello.bin'"
+    # TODO: add a test for building with netCDF library.
