@@ -15,8 +15,16 @@ jobs:
     - uses: actions/checkout@v1
     - name: Build the Docker image
       run: docker build . --file Dockerfile --tag "${TAG}"
-    - name: Basic test for the Docker image
+    - name: Test Docker image, basic
       run: |
+        docker run --rm -v "${PWD}/test:/opt/test" "${TAG}" fcm make -C '/opt/test'
+        docker run --rm -v "${PWD}/test:/opt/test" "${TAG}" '/opt/test/build/bin/hello.bin'
+    - name: Test Docker image, build with netCDF
+      run: |
+        curl -L \
+          'https://www.unidata.ucar.edu/software/netcdf/examples/programs/simple_xy_wr.f90' \
+          -o 'test/src/simple_xy_wr.f90'
         docker run --rm -v "${PWD}/test:/opt/test" "${TAG}" \
-        bash -c "fcm make -C '/opt/test' && '/opt/test/build/bin/hello.bin'"
-    # TODO: add a test for building with netCDF library.
+          fcm make -C '/opt/test' -f '/opt/test/fcm-make-with-netcdf.cfg'
+        docker run --rm -v "${PWD}/test:/opt/test" "${TAG}" \
+          env 'LD_LIBRARY_PATH=/usr/local/lib' '/opt/test/build/bin/simple_xy_wr.bin'
